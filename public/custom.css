@@ -109,13 +109,15 @@
    was designed for a cream page bg (so they're navy → invisible on
    navy glass). Force nav links, the logo filter, and dropdown
    caret/menu icons to a cream tone when scrolled. */
-.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item,
-.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-sub-item,
+.elementor-location-header.is-scrolled .elementor-nav-menu > li > a.elementor-item,
 .elementor-location-header.is-scrolled .elementor-menu-toggle,
 .elementor-location-header.is-scrolled .elementor-menu-toggle svg {
   color: rgb(255, 253, 250) !important;
   fill: rgb(255, 253, 250) !important;
 }
+/* Sub-menu items keep their original dark color — the dropdown panel
+   has its own light/white background, so cream text would vanish.
+   Leave them alone by not overriding color here. */
 /* Dropdown chevron/arrow icons inside nav links */
 .elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item svg,
 .elementor-location-header.is-scrolled .elementor-nav-menu .sub-arrow svg {
