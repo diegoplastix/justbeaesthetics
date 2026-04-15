@@ -1,0 +1,248 @@
+/* ============================================================
+   JustBE Aesthetics — post-mirror overrides
+   Loaded AFTER all WP/Elementor CSS so declarations here win.
+   ============================================================ */
+
+/* -----------------------------------------------------------
+   1) Announcement bar — phone number as a link
+   ----------------------------------------------------------- */
+.announcement-phone,
+.announcement-phone:link,
+.announcement-phone:visited {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: opacity 200ms ease-in-out;
+}
+.announcement-phone:hover,
+.announcement-phone:focus {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* -----------------------------------------------------------
+   2) Sticky navbar with hero-transparent / scrolled-glass states
+
+   Layout: <header.elementor-location-header> contains two rows:
+     - .elementor-element-ae8edda  → burgundy announcement bar (unchanged)
+     - .elementor-element-aeb7afc  → main nav row (logo + menu + CTA)
+
+   Behavior:
+     - Over hero (top of page): main nav row is fully transparent
+     - Once scrolled: nav row adopts the footer's navy
+       rgb(26, 37, 48) at 95% with a light backdrop-blur for a
+       subtle liquid-glass feel
+
+   The `.is-scrolled` class is toggled by the inline script at the
+   bottom of index.html (on scroll past 24px).
+   ----------------------------------------------------------- */
+/* Sticky header. The theme's reset.css includes
+   `* { background-color: transparent !important }` which fights any
+   per-element bg rule we'd add to the nav row, so we apply the scrolled
+   glass-navy bg on the HEADER itself (which the reset doesn't touch the
+   same way via its element-type specificity) and let the announcement
+   bar's own explicit burgundy bg layer on top, leaving the nav row
+   portion showing through. */
+.elementor-location-header {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  transition: background-color 280ms ease-in-out,
+              backdrop-filter 280ms ease-in-out,
+              -webkit-backdrop-filter 280ms ease-in-out,
+              box-shadow 280ms ease-in-out;
+}
+
+.elementor-location-header.is-scrolled {
+  background-color: rgba(26, 37, 48, 0.95) !important;
+  -webkit-backdrop-filter: saturate(140%) blur(10px) !important;
+  backdrop-filter: saturate(140%) blur(10px) !important;
+  box-shadow: 0 6px 24px rgba(26, 37, 48, 0.18) !important;
+}
+
+/* The main nav row itself stays transparent so the header bg shows
+   through in both states. Also force full opacity — Elementor's
+   fade-in animation can leave the row stuck at opacity:0 on pages
+   where the header is already sticky/pinned when the animation fires
+   (common on non-homepage templates). */
+.elementor-location-header > .elementor-element:not(.elementor-hidden-mobile) {
+  background-color: transparent !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+/* Also clear any lingering fade-in animation that could re-hide it */
+.elementor-location-header > .elementor-element:not(.elementor-hidden-mobile).animated,
+.elementor-location-header > .elementor-element:not(.elementor-hidden-mobile).elementor-invisible {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* "Book A Session" (and any other) CTA in the nav: when the nav row
+   is its default navy, a navy button disappears. Invert the pill to
+   cream-on-navy when scrolled, with a smooth transition both ways. */
+.elementor-location-header > .elementor-element:not(.elementor-hidden-mobile) .elementor-button {
+  transition:
+    background-color 280ms ease-in-out,
+    color 280ms ease-in-out,
+    border-color 280ms ease-in-out,
+    box-shadow 280ms ease-in-out !important;
+}
+.elementor-location-header.is-scrolled > .elementor-element:not(.elementor-hidden-mobile) .elementor-button {
+  background-color: #fffdfa !important; /* cream / off-white */
+  color: rgb(26, 37, 48) !important;
+  border-color: #fffdfa !important;
+}
+.elementor-location-header.is-scrolled > .elementor-element:not(.elementor-hidden-mobile) .elementor-button:hover,
+.elementor-location-header.is-scrolled > .elementor-element:not(.elementor-hidden-mobile) .elementor-button:focus {
+  background-color: rgba(255, 253, 250, 0.88) !important;
+  color: rgb(26, 37, 48) !important;
+}
+
+/* No text-shadow on nav links — it looked harsh on cream-bg pages
+   that don't sit behind a hero image. Brand nav colors already work
+   on both states per-page. */
+
+/* When scrolled, the glass-navy bg makes every page's header dark.
+   Homepage's nav is already cream, but every other page's nav/logo
+   was designed for a cream page bg (so they're navy → invisible on
+   navy glass). Force nav links, the logo filter, and dropdown
+   caret/menu icons to a cream tone when scrolled. */
+.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item,
+.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-sub-item,
+.elementor-location-header.is-scrolled .elementor-menu-toggle,
+.elementor-location-header.is-scrolled .elementor-menu-toggle svg {
+  color: rgb(255, 253, 250) !important;
+  fill: rgb(255, 253, 250) !important;
+}
+/* Dropdown chevron/arrow icons inside nav links */
+.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item svg,
+.elementor-location-header.is-scrolled .elementor-nav-menu .sub-arrow svg {
+  color: rgb(255, 253, 250) !important;
+  fill: rgb(255, 253, 250) !important;
+}
+/* Logo: if an Elementor filter recolors it to navy, invert our
+   override into a light-cream tone. brightness(0) crushes the png
+   to pure black, invert(1) flips to white — close enough to #fffdfa. */
+.elementor-location-header.is-scrolled .elementor-widget-image img {
+  filter: brightness(0) invert(1) !important;
+  transition: filter 280ms ease-in-out;
+}
+/* Smooth color transition on the nav links too */
+.elementor-location-header .elementor-nav-menu a.elementor-item,
+.elementor-location-header .elementor-widget-image img {
+  transition: color 280ms ease-in-out, filter 280ms ease-in-out;
+}
+
+/* -----------------------------------------------------------
+   3) Services dropdown — breathing room between trigger and menu
+   Elementor renders the submenu absolutely-positioned; we add:
+     a) visual spacing via margin-top (boosted specificity so it
+        wins against Elementor's .elementor-995 ... rule)
+     b) an invisible hover-bridge on the parent li so the pointer
+        can travel from trigger to menu without the menu closing
+   ----------------------------------------------------------- */
+body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu.elementor-nav-menu--dropdown {
+  margin-top: 18px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+/* Defensive: same rule for any viewport/media-query context */
+@media (min-width: 768px) {
+  body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu {
+    margin-top: 18px !important;
+  }
+}
+/* bridge the gap with an invisible hoverable area so the menu
+   doesn't close when the cursor travels from label to dropdown */
+.elementor-nav-menu > li.menu-item-has-children {
+  position: relative;
+}
+.elementor-nav-menu > li.menu-item-has-children::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 18px;
+  pointer-events: auto;
+}
+
+/* -----------------------------------------------------------
+   4) Services / card hover — smoother transitions
+
+   "Meet Dr. Marchuk" card lift (.box-hover)
+   ----------------------------------------------------------- */
+.box-hover,
+.box-hover:hover {
+  transition: transform 300ms ease-in-out,
+              box-shadow 300ms ease-in-out,
+              background-color 300ms ease-in-out !important;
+}
+.service-box {
+  transition: transform 300ms ease-in-out,
+              box-shadow 300ms ease-in-out,
+              background-color 300ms ease-in-out !important;
+}
+
+/* "One Practice. Two Pillars." cards
+   Original markup toggles .service-list with display:none → block,
+   which makes the opacity transition a no-op (display changes are
+   instant). Override to use opacity + visibility + max-height so the
+   list reveals smoothly. */
+@media (min-width: 766px) {
+  .service-box .service .service-list {
+    display: block !important;
+    opacity: 0 !important;
+    visibility: hidden;
+    max-height: 0;
+    overflow: hidden;
+    margin-top: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 320ms ease-in-out,
+      max-height 360ms ease-in-out,
+      margin-top 360ms ease-in-out,
+      transform 320ms ease-in-out,
+      visibility 0s linear 360ms; /* flip visibility at the end on close */
+    will-change: opacity, max-height, transform;
+  }
+  .service-box:hover .service .service-list {
+    opacity: 1 !important;
+    visibility: visible;
+    max-height: 400px; /* enough to fit the longest list */
+    margin-top: 12px;
+    transform: translateY(0);
+    transition:
+      opacity 320ms ease-in-out,
+      max-height 420ms ease-in-out,
+      margin-top 360ms ease-in-out,
+      transform 320ms ease-in-out,
+      visibility 0s linear 0s; /* show immediately on hover */
+  }
+
+  /* Smooth the parent flex layout shift that accompanies the reveal */
+  .service-box .service,
+  .service-box:hover .service {
+    transition: justify-content 320ms ease-in-out,
+                gap 320ms ease-in-out !important;
+  }
+}
+
+/* -----------------------------------------------------------
+   5) Success stories video polish
+   Hosted Elementor videos default to `object-fit: fill` which
+   can stretch. Keep them contained and make the click-target
+   (the video itself) feel responsive.
+   ----------------------------------------------------------- */
+.elementor-widget-video .elementor-video {
+  cursor: pointer;
+  background-color: #000;
+  object-fit: cover;
+  transition: transform 300ms ease-in-out;
+}
+.elementor-widget-video .e-hosted-video {
+  border-radius: 6px;
+  overflow: hidden;
+}
