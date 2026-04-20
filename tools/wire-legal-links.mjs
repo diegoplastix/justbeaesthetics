@@ -33,7 +33,10 @@ for (const f of files) {
     { text: 'Terms & Conditions', href: '/terms-and-conditions/' },
   ];
   for (const r of rules) {
-    const re = new RegExp(`<a([^>]*?)\\shref="#"([^>]*)>([\\s\\S]*?<span class="elementor-icon-list-text">${r.text}</span>[\\s\\S]*?)</a>`, 'g');
+    // Negative lookahead (?!</a>) prevents the inner-group from spanning
+    // across multiple anchors (which previously rewrote the Services nav
+    // trigger instead of just the footer link).
+    const re = new RegExp(`<a([^>]*?)\\shref="#"([^>]*)>((?:(?!<\\/a>)[\\s\\S])*?<span class="elementor-icon-list-text">${r.text}</span>(?:(?!<\\/a>)[\\s\\S])*?)</a>`, 'g');
     const before = html;
     html = html.replace(re, (_, b, a, inner) => `<a${b} href="${r.href}"${a}>${inner}</a>`);
     if (html !== before) { changed = true; linkFixed++; }
