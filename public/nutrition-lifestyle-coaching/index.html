@@ -816,22 +816,151 @@ const a=JSON.parse(document.getElementById("wp-emoji-settings").textContent),o=(
 </script>
 
 
-<!-- Toggle .is-scrolled on the sticky header once the page moves past the hero -->
+<!-- Post-mirror runtime: sticky-nav scroll toggle + hamburger fallback -->
 <script>
 (function () {
+  // -- Sticky header scrolled-state toggle ----------------------------
   var header = document.querySelector('.elementor-location-header');
-  if (!header) return;
-  var threshold = 24;
-  var ticking = false;
-  function update() {
-    if (window.scrollY > threshold) header.classList.add('is-scrolled');
-    else header.classList.remove('is-scrolled');
-    ticking = false;
+  if (header) {
+    var threshold = 24;
+    var ticking = false;
+    function update() {
+      if (window.scrollY > threshold) header.classList.add('is-scrolled');
+      else header.classList.remove('is-scrolled');
+      ticking = false;
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+
+    // Publish header height as a CSS variable so the mobile popup can
+    // open BELOW the header instead of covering the logo.
+    function publishHeaderHeight() {
+      var h = Math.round(header.getBoundingClientRect().height);
+      if (h > 0) document.documentElement.style.setProperty('--jbe-header-h', h + 'px');
+    }
+    publishHeaderHeight();
+    window.addEventListener('resize', publishHeaderHeight, { passive: true });
+    // Also re-publish when fonts/images load and change header height
+    window.addEventListener('load', publishHeaderHeight, { once: true });
   }
-  window.addEventListener('scroll', function () {
-    if (!ticking) { requestAnimationFrame(update); ticking = true; }
-  }, { passive: true });
-  update();
+
+  // -- Hamburger menu toggle (fallback) ------------------------------
+  // Elementor Pro's widget handler doesn't always bind on a static
+  // mirror, so we implement a minimal vanilla-JS version. Toggles
+  // `elementor-active` on the button AND on the dropdown container,
+  // which is what Elementor's built-in CSS keys off of.
+  function initHamburger(toggle) {
+    if (!toggle || toggle.dataset.jbeBound === '1') return;
+    toggle.dataset.jbeBound = '1';
+    var container = toggle.parentElement &&
+      toggle.parentElement.querySelector('nav.elementor-nav-menu--dropdown');
+    if (!container) return;
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      var active = !toggle.classList.contains('elementor-active');
+      toggle.classList.toggle('elementor-active', active);
+      toggle.setAttribute('aria-expanded', active ? 'true' : 'false');
+      container.classList.toggle('elementor-active', active);
+      container.setAttribute('aria-hidden', active ? 'false' : 'true');
+      document.body.classList.toggle('jbe-menu-open', active);
+    });
+    // Clicking any link inside the popup should close it
+    container.addEventListener('click', function (e) {
+      var a = e.target.closest('a');
+      if (!a) return;
+      // Don't close on the expandable parent (href="#") — it just toggles sub-menu
+      if (a.getAttribute('href') === '#') return;
+      toggle.classList.remove('elementor-active');
+      toggle.setAttribute('aria-expanded', 'false');
+      container.classList.remove('elementor-active');
+      container.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('jbe-menu-open');
+    });
+    // Submenu tap-to-expand (Services → Botox, Fillers, etc.) inside
+    // the hamburger. Each parent <a href="#"> just prevents navigation
+    // and toggles an expanded class on its <li>.
+    container.querySelectorAll('li.menu-item-has-children > a').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (a.getAttribute('href') === '#') {
+          e.preventDefault();
+          a.parentElement.classList.toggle('jbe-mobile-open');
+        }
+      });
+    });
+  }
+  document.querySelectorAll('.elementor-menu-toggle').forEach(initHamburger);
+
+  // -- Desktop dropdown hover (Services → Botox, etc.) ----------------
+  document.querySelectorAll('.elementor-nav-menu > li.menu-item-has-children').forEach(function (li) {
+    if (li.dataset.jbeBound === '1') return;
+    li.dataset.jbeBound = '1';
+    var sub = li.querySelector('.sub-menu');
+    if (!sub) return;
+    var closeTimer;
+    function open() { clearTimeout(closeTimer); li.classList.add('jbe-dropdown-open'); }
+    function scheduleClose() { closeTimer = setTimeout(function () { li.classList.remove('jbe-dropdown-open'); }, 120); }
+    li.addEventListener('mouseenter', open);
+    li.addEventListener('mouseleave', scheduleClose);
+    sub.addEventListener('mouseenter', open);
+    sub.addEventListener('mouseleave', scheduleClose);
+  });
+
+  // -- Carousel init (Success Stories + Testimonials + any other) -----
+  // Elementor's widget handler normally calls `new Swiper(...)` on each
+  // .e-n-carousel; on the static mirror it doesn't, so the prev/next
+  // buttons and pagination bullets don't do anything. We init each
+  // carousel explicitly using the settings Elementor embeds on the
+  // wrapping widget element.
+  function initCarousels() {
+    if (typeof window.Swiper === 'undefined') return false;
+    document.querySelectorAll('.elementor-widget-n-carousel').forEach(function (widget) {
+      var swiperEl = widget.querySelector('.swiper');
+      if (!swiperEl || swiperEl.swiper) return;
+      var settings = {};
+      try { settings = JSON.parse(widget.getAttribute('data-settings') || '{}'); } catch (e) {}
+      var desktopCount = parseInt(settings.slides_to_show, 10) || 3;
+      var tabletCount = parseInt(settings.slides_to_show_tablet, 10) || Math.min(desktopCount, 2);
+      var mobileCount = parseInt(settings.slides_to_show_mobile, 10) || 1;
+      var space = (settings.image_spacing_custom && settings.image_spacing_custom.size) || 0;
+      var prevBtn = widget.querySelector('.elementor-swiper-button-prev');
+      var nextBtn = widget.querySelector('.elementor-swiper-button-next');
+      var pagEl = widget.querySelector('.swiper-pagination');
+      try {
+        new window.Swiper(swiperEl, {
+          slidesPerView: mobileCount,
+          slidesPerGroup: parseInt(settings.slides_to_scroll_mobile, 10) || 1,
+          spaceBetween: space,
+          loop: settings.infinite === 'yes',
+          speed: parseInt(settings.speed, 10) || 500,
+          autoplay: settings.autoplay === 'yes' ? {
+            delay: parseInt(settings.autoplay_speed, 10) || 5000,
+            disableOnInteraction: settings.pause_on_interaction === 'yes',
+            pauseOnMouseEnter: settings.pause_on_hover === 'yes'
+          } : false,
+          navigation: (prevBtn && nextBtn) ? { prevEl: prevBtn, nextEl: nextBtn } : false,
+          pagination: (pagEl && settings.pagination === 'bullets') ? { el: pagEl, clickable: true } : false,
+          breakpoints: {
+            768: {
+              slidesPerView: tabletCount,
+              slidesPerGroup: parseInt(settings.slides_to_scroll_tablet, 10) || 1
+            },
+            1025: {
+              slidesPerView: desktopCount,
+              slidesPerGroup: parseInt(settings.slides_to_scroll, 10) || 1
+            }
+          }
+        });
+      } catch (e) { console.warn('Swiper init failed', e); }
+    });
+    return true;
+  }
+  // Try immediately, then retry once window is fully loaded (Swiper may
+  // arrive via a deferred script).
+  if (!initCarousels()) {
+    window.addEventListener('load', initCarousels, { once: true });
+  }
 })();
 </script>
 </body>

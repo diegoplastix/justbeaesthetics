@@ -104,71 +104,105 @@
    that don't sit behind a hero image. Brand nav colors already work
    on both states per-page. */
 
-/* When scrolled, the glass-navy bg makes every page's header dark.
-   Homepage's nav is already cream, but every other page's nav/logo
-   was designed for a cream page bg (so they're navy → invisible on
-   navy glass). Force nav links, the logo filter, and dropdown
-   caret/menu icons to a cream tone when scrolled. */
-.elementor-location-header.is-scrolled .elementor-nav-menu > li > a.elementor-item,
+/* When scrolled, force nav links + logo to cream — but ONLY on
+   DESKTOP where the glass-navy bg is visible. On mobile the
+   hamburger-opened panel is a separate light-colored ui, so
+   cream text would become invisible there. Breakpoint matches
+   Elementor's default 1024px mobile menu cutoff. */
+@media (min-width: 1025px) {
+  .elementor-location-header.is-scrolled .elementor-nav-menu > li > a.elementor-item {
+    color: rgb(255, 253, 250) !important;
+  }
+  .elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item svg,
+  .elementor-location-header.is-scrolled .elementor-nav-menu .sub-arrow svg {
+    color: rgb(255, 253, 250) !important;
+    fill: rgb(255, 253, 250) !important;
+  }
+  /* Logo: Elementor filters it to navy on non-homepage templates;
+     flip to pure white over the navy glass. */
+  .elementor-location-header.is-scrolled .elementor-widget-image img {
+    filter: brightness(0) invert(1) !important;
+    transition: filter 280ms ease-in-out;
+  }
+  /* Smooth color transition for desktop only */
+  .elementor-location-header .elementor-nav-menu a.elementor-item,
+  .elementor-location-header .elementor-widget-image img {
+    transition: color 280ms ease-in-out, filter 280ms ease-in-out;
+  }
+}
+/* Hamburger icon ALWAYS follows the scrolled state — on mobile the
+   hamburger is shown over the glass-navy sticky header. Keep this
+   outside the desktop media query. */
 .elementor-location-header.is-scrolled .elementor-menu-toggle,
 .elementor-location-header.is-scrolled .elementor-menu-toggle svg {
   color: rgb(255, 253, 250) !important;
   fill: rgb(255, 253, 250) !important;
 }
-/* Sub-menu items keep their original dark color — the dropdown panel
-   has its own light/white background, so cream text would vanish.
-   Leave them alone by not overriding color here. */
-/* Dropdown chevron/arrow icons inside nav links */
-.elementor-location-header.is-scrolled .elementor-nav-menu a.elementor-item svg,
-.elementor-location-header.is-scrolled .elementor-nav-menu .sub-arrow svg {
-  color: rgb(255, 253, 250) !important;
-  fill: rgb(255, 253, 250) !important;
-}
-/* Logo: if an Elementor filter recolors it to navy, invert our
-   override into a light-cream tone. brightness(0) crushes the png
-   to pure black, invert(1) flips to white — close enough to #fffdfa. */
-.elementor-location-header.is-scrolled .elementor-widget-image img {
-  filter: brightness(0) invert(1) !important;
-  transition: filter 280ms ease-in-out;
-}
-/* Smooth color transition on the nav links too */
-.elementor-location-header .elementor-nav-menu a.elementor-item,
-.elementor-location-header .elementor-widget-image img {
-  transition: color 280ms ease-in-out, filter 280ms ease-in-out;
-}
 
 /* -----------------------------------------------------------
-   3) Services dropdown — breathing room between trigger and menu
-   Elementor renders the submenu absolutely-positioned; we add:
-     a) visual spacing via margin-top (boosted specificity so it
-        wins against Elementor's .elementor-995 ... rule)
-     b) an invisible hover-bridge on the parent li so the pointer
-        can travel from trigger to menu without the menu closing
+   3) Services dropdown — DESKTOP only, CSS-only hover fallback.
+   Independent of Elementor's SmartMenus JS (which doesn't always bind
+   on the static mirror). Uses display:none/block for reliability and
+   min-width:max-content so long labels like "Nutrition & Lifestyle
+   coaching" never overflow or appear outside the panel.
    ----------------------------------------------------------- */
-body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu.elementor-nav-menu--dropdown {
-  margin-top: 18px !important;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
-}
-/* Defensive: same rule for any viewport/media-query context */
-@media (min-width: 768px) {
-  body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu {
-    margin-top: 18px !important;
+@media (min-width: 1025px) {
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children {
+    position: relative;
   }
-}
-/* bridge the gap with an invisible hoverable area so the menu
-   doesn't close when the cursor travels from label to dropdown */
-.elementor-nav-menu > li.menu-item-has-children {
-  position: relative;
-}
-.elementor-nav-menu > li.menu-item-has-children::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 18px;
-  pointer-events: auto;
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: max-content;
+    margin: 0;
+    padding: 6px 0;
+    background-color: #fffdfa;
+    border-radius: 6px;
+    box-shadow: 0 10px 32px rgba(26, 37, 48, 0.18);
+    z-index: 9998;
+    list-style: none;
+    /* small visual gap below the trigger — implemented with padding-top
+       on the UL itself (not margin-top) so the hover target stays
+       connected and the dropdown doesn't flicker between label/menu */
+    padding-top: 18px;
+    background-clip: padding-box;
+  }
+  /* Cover the 18px gap so the pointer never falls into dead space */
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 19px;
+    background: transparent;
+  }
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children:hover > ul.sub-menu,
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children:focus-within > ul.sub-menu,
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children.jbe-dropdown-open > ul.sub-menu {
+    display: block !important;
+  }
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu li {
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: auto;
+  }
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu a.elementor-sub-item {
+    display: block;
+    padding: 12px 22px;
+    white-space: nowrap;
+    color: rgb(26, 37, 48);
+    font-size: 15px;
+    line-height: 1.4;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+  .elementor-location-header .elementor-nav-menu > li.menu-item-has-children > ul.sub-menu a.elementor-sub-item:hover {
+    background-color: rgba(26, 37, 48, 0.06);
+  }
 }
 
 /* -----------------------------------------------------------
@@ -233,16 +267,134 @@ body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children 
 }
 
 /* -----------------------------------------------------------
-   5) Success stories video polish — minimal.
-   An earlier version forced `object-fit: cover` which cropped the
-   videos and caused visible distortion. Leave the video's native
-   aspect ratio alone; only add a hover cursor and rounded corners
-   on the wrapper.
+   5) Success stories videos — prevent distortion.
+   Both Elementor's widget-video.min.css and each post-*.css set
+   `object-fit: cover` on hosted videos, which crops the frame to fill
+   the container. On vertical phone-shot videos (480×854) displayed in
+   a wider container this looks stretched/cropped. Force `contain` so
+   the native aspect ratio is preserved; letterbox with black bars.
    ----------------------------------------------------------- */
+.elementor-widget-video .e-hosted-video .elementor-video,
+.elementor-widget-video .elementor-wrapper video,
+.elementor-widget-video video.elementor-video {
+  object-fit: contain !important;
+  background-color: #000 !important;
+}
 .elementor-widget-video .elementor-video {
   cursor: pointer;
 }
 .elementor-widget-video .e-hosted-video {
   border-radius: 6px;
   overflow: hidden;
+}
+
+/* -----------------------------------------------------------
+   6) Mobile hamburger menu — FULL-SCREEN POPUP
+   Hidden by default; when the hamburger is tapped our inline JS adds
+   `.elementor-active` to the nav container. The container escapes any
+   parent widget-width constraint with `position: fixed` and becomes a
+   full-viewport overlay below the sticky header.
+   ----------------------------------------------------------- */
+@media (max-width: 1024px) {
+  /* Collapsed state */
+  .elementor-location-header nav.elementor-nav-menu--dropdown {
+    display: none;
+  }
+
+  /* Opened state — full-width popup that opens BELOW the header so
+     the logo + hamburger/X stay visible. The JS sets a CSS variable
+     `--jbe-header-h` with the measured header height. */
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active {
+    display: block !important;
+    position: fixed !important;
+    top: var(--jbe-header-h, 72px);
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: auto;
+    max-height: calc(100vh - var(--jbe-header-h, 72px));
+    padding: 8px 0 32px;
+    background-color: #fffdfa;
+    box-shadow: 0 8px 24px rgba(26, 37, 48, 0.12);
+    z-index: 9998;                    /* under the header (9999) so logo stays on top */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Ensure inner UL takes full width and is vertical */
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active > ul {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+    display: block !important;
+  }
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active > ul > li,
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .sub-menu > li {
+    width: 100% !important;
+    display: block !important;
+  }
+
+  /* Readable items on the cream popup regardless of Elementor's template
+     color overrides (homepage sets items cream for the hero). */
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .elementor-item,
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .elementor-sub-item {
+    color: rgb(26, 37, 48) !important;
+    display: block !important;
+    width: 100% !important;
+    padding: 18px 24px !important;
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    border-bottom: 1px solid rgba(26, 37, 48, 0.08);
+    text-align: left;
+  }
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .elementor-item:hover,
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .elementor-sub-item:hover {
+    background-color: rgba(26, 37, 48, 0.04);
+  }
+  /* Active/current page item: Elementor paints it with the accent color
+     (navy) as background. Combined with navy text that makes it invisible
+     on the cream popup. Force it to the cream bg + navy text + a subtle
+     left-accent to still show it as the current page. */
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active a.elementor-item.elementor-item-active,
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active a.elementor-sub-item.elementor-item-active,
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .current-menu-item > a.elementor-item {
+    background-color: rgba(26, 37, 48, 0.06) !important;
+    color: rgb(26, 37, 48) !important;
+    border-left: 3px solid rgb(122, 40, 59);
+    padding-left: 21px !important; /* 24 - 3 border */
+    font-weight: 500 !important;
+  }
+  /* Sub-menu inside the popup — collapsed by default; expanded via
+     `.jbe-mobile-open` class our JS toggles on tap of the parent. */
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .sub-menu {
+    display: none;
+    background-color: rgba(26, 37, 48, 0.04);
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+  }
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active li.jbe-mobile-open > .sub-menu {
+    display: block;
+  }
+  .elementor-location-header nav.elementor-nav-menu--dropdown.elementor-active .elementor-sub-item {
+    padding-left: 48px !important;
+    font-size: 16px !important;
+  }
+
+  /* Keep the hamburger toggle itself above the popup so users can close */
+  .elementor-menu-toggle {
+    position: relative;
+    z-index: 10000 !important;
+  }
+  /* Icon swap on active */
+  .elementor-menu-toggle .elementor-menu-toggle__icon--close { display: none; }
+  .elementor-menu-toggle.elementor-active .elementor-menu-toggle__icon--open { display: none; }
+  .elementor-menu-toggle.elementor-active .elementor-menu-toggle__icon--close { display: inline-block; }
+
+  /* When the popup is open, lock page scroll behind it */
+  body.jbe-menu-open {
+    overflow: hidden;
+  }
 }
