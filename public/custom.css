@@ -233,16 +233,14 @@ body .elementor-location-header .elementor-nav-menu > li.menu-item-has-children 
 }
 
 /* -----------------------------------------------------------
-   5) Success stories video polish
-   Hosted Elementor videos default to `object-fit: fill` which
-   can stretch. Keep them contained and make the click-target
-   (the video itself) feel responsive.
+   5) Success stories video polish — minimal.
+   An earlier version forced `object-fit: cover` which cropped the
+   videos and caused visible distortion. Leave the video's native
+   aspect ratio alone; only add a hover cursor and rounded corners
+   on the wrapper.
    ----------------------------------------------------------- */
 .elementor-widget-video .elementor-video {
   cursor: pointer;
-  background-color: #000;
-  object-fit: cover;
-  transition: transform 300ms ease-in-out;
 }
 .elementor-widget-video .e-hosted-video {
   border-radius: 6px;
